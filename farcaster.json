@@ -1,0 +1,8 @@
+{
+  "name": "Snake Game",
+  "version": "1.0.0",
+  "description": "A classic Snake game with competition mode and leaderboard",
+  "splashBackgroundColor": "#000000",
+  "homeUrl": "/",
+  "iconUrl": "/icon.png"
+}
