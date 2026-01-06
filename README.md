@@ -61,7 +61,7 @@ The app uses:
 
 The `farcaster.json` manifest file configures the mini app:
 
-```json
+\`\`\`json
 {
   "name": "Snake Game",
   "version": "1.0.0",
@@ -70,13 +70,13 @@ The `farcaster.json` manifest file configures the mini app:
   "homeUrl": "/",
   "iconUrl": "/icon.png"
 }
-```
+\`\`\`
 
 ### Meta Tags
 
 The app includes Farcaster frame meta tags in `app/layout.tsx` for proper embedding:
 
-```tsx
+\`\`\`tsx
 other: {
   "fc:frame": "vNext",
   "fc:frame:image": "https://yourdomain.com/preview.png",
@@ -84,7 +84,7 @@ other: {
   "fc:frame:button:1:action": "link",
   "fc:frame:button:1:target": "https://yourdomain.com",
 }
-```
+\`\`\`
 
 ## Leaderboard System
 
@@ -95,10 +95,10 @@ other: {
 
 ## Installation
 
-```bash
+\`\`\`bash
 npm install
 npm run dev
-```
+\`\`\`
 
 Visit `http://localhost:3000` to play locally.
 
@@ -108,9 +108,9 @@ Visit `http://localhost:3000` to play locally.
 
 In `hooks/use-pay-to-compete.ts`, update the recipient address:
 
-```tsx
+\`\`\`tsx
 const RECIPIENT_ADDRESS = "0xYourAddressHere"
-```
+\`\`\`
 
 ### Implement On-Chain Storage
 
@@ -122,7 +122,7 @@ The current implementation uses localStorage as a placeholder. To implement real
 
 ## Project Structure
 
-```
+\`\`\`
 ├── app/
 │   ├── layout.tsx          # Root layout with Wagmi providers
 │   ├── page.tsx            # Main game navigation
@@ -141,15 +141,15 @@ The current implementation uses localStorage as a placeholder. To implement real
 │   ├── providers.tsx       # React Query + Wagmi providers
 │   └── utils.ts            # Utility functions
 └── farcaster.json          # Farcaster mini app manifest
-```
+\`\`\`
 
 ## Deployment
 
 ### Deploy to Vercel
 
-```bash
+\`\`\`bash
 vercel
-```
+\`\`\`
 
 ### Environment Variables
 
