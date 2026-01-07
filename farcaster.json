@@ -1,8 +1,10 @@
 {
   "name": "Snake Game",
-  "version": "1.0.0",
-  "description": "A classic Snake game with competition mode and leaderboard",
-  "splashBackgroundColor": "#000000",
-  "homeUrl": "/",
-  "iconUrl": "/icon.png"
+  "description": "Classic Snake, weekly competition leaderboard",
+  "icon": "/icon.png",
+  "url": "https://v0-snake-game-farcaster-mini-app-w8l7-fqp0z2qom.vercel.app",
+  "developer": {
+    "name": "Your Name",
+    "url": "https://github.com/KNKDJWI"
+  }
 }
