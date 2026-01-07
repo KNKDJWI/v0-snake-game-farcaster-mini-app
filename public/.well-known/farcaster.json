@@ -2,7 +2,7 @@
   "name": "Snake Game",
   "description": "Classic Snake, weekly competition leaderboard",
   "icon": "/icon.png",
-  "homeurl": "https://v0-snake-game-farcaster-mini-app-w8l7-fzpybknna.vercel.app",
+  "homeurl": "https://v0-snake-game-farcaster-mini-app.vercel.app",
   "developer": {
     "name": "Your Name",
     "url": "https://github.com/KNKDJWI"
