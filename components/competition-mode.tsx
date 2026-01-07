@@ -15,7 +15,7 @@ interface CompetitionModeProps {
 export default function CompetitionMode({ onGameOver }: CompetitionModeProps) {
   const { address, isConnected } = useAccount()
   const { connectors, connect } = useConnect()
-  const { isPaid, isProcessing, handlePayment } = usePayToCompete()
+  const { isPaid, isProcessing, handlePayment, error } = usePayToCompete()
   const [gameStarted, setGameStarted] = useState(false)
   const [currentScore, setCurrentScore] = useState(0)
   const [highScore, setHighScore] = useState(0)
@@ -26,35 +26,34 @@ export default function CompetitionMode({ onGameOver }: CompetitionModeProps) {
   useEffect(() => {
     if (address) {
       const stored = localStorage.getItem(`highscore_${address}`)
-      if (stored) {
-        setHighScore(Number.parseInt(stored, 10))
-      }
+      if (stored) setHighScore(Number.parseInt(stored, 10))
     }
   }, [address])
 
   const handleConnectWallet = async () => {
     const connector = connectors[0]
-    if (connector) {
-      connect({ connector })
-    }
+    if (connector) connect({ connector })
   }
 
-  const handleStartCompetition = async () => {
-    if (!isPaid) {
-      try {
-        await handlePayment()
-      } catch (error) {
-        console.error("[v0] Payment failed:", error)
-        return
-      }
+  // Start the game automatically once payment is confirmed
+  useEffect(() => {
+    if (isPaid && !gameStarted && !showFinalScore) {
+      setGameStarted(true)
+      setCurrentScore(0)
     }
+  }, [isPaid, gameStarted, showFinalScore])
 
-    setGameStarted(true)
+  const handleStartCompetition = async () => {
     setShowFinalScore(false)
     setCurrentScore(0)
+    if (!isPaid) {
+      await handlePayment()
+    }
+    // Do NOT set gameStarted here — wait for useEffect after payment confirmation
   }
 
   const handleGameComplete = (score: number) => {
+    setCurrentScore(score)
     setShowFinalScore(true)
     setGameStarted(false)
 
@@ -62,29 +61,24 @@ export default function CompetitionMode({ onGameOver }: CompetitionModeProps) {
     if (score > highScore) {
       setHighScore(score)
       setIsNewHighScore(true)
-      // Save to localStorage (placeholder for on-chain storage)
       if (address) {
         localStorage.setItem(`highscore_${address}`, score.toString())
-        // TODO: Save to blockchain/database
         saveScoreOnChain(address, score)
       }
     } else {
       setIsNewHighScore(false)
     }
 
-    onGameOver(score)
+    console.log("Game over",score)
   }
 
   // Placeholder function for saving score on-chain
   const saveScoreOnChain = async (walletAddress: string, score: number) => {
-    console.log("[v0] Saving score on-chain:", { walletAddress, score })
+    console.log("[v1] Saving score on-chain:", { walletAddress, score })
     // TODO: Implement actual on-chain storage
-    // This would typically involve:
-    // 1. Smart contract call to store score
-    // 2. Verification that payment was received
-    // 3. Update leaderboard
   }
 
+  // --- UI Sections ---
   if (!isConnected) {
     return (
       <div className="max-w-md mx-auto">
@@ -147,12 +141,23 @@ export default function CompetitionMode({ onGameOver }: CompetitionModeProps) {
             </div>
           </div>
 
+          {error && (
+            <Alert className="mb-4 bg-red-900/20 border-red-700">
+              <AlertDescription className="text-sm text-red-200 text-center">{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {/* --- Dynamic Payment Button --- */}
           <Button
             onClick={handleStartCompetition}
-            disabled={isProcessing}
+            disabled={isProcessing || isPaid} // disable while processing or already paid
             className="w-full h-14 text-lg bg-green-600 hover:bg-green-700"
           >
-            {isProcessing ? "Processing Payment..." : "Pay & Start Competition"}
+            {isProcessing
+              ? "Processing Payment..."
+              : isPaid
+              ? "Payment Confirmed! Starting..."
+              : "Pay & Start Competition"}
           </Button>
         </Card>
       </div>
@@ -205,6 +210,7 @@ export default function CompetitionMode({ onGameOver }: CompetitionModeProps) {
     )
   }
 
+  // --- Game UI ---
   return (
     <div>
       <Card className="p-4 bg-gray-800/50 border-gray-700 backdrop-blur mb-4">

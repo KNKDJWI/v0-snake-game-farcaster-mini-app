@@ -44,6 +44,7 @@ export default function SnakeGame({ isCompetitionMode, onGameOver, onScoreUpdate
   const [items, setItems] = useState<GameItem[]>([])
   const [walls, setWalls] = useState<Position[]>([])
   const [score, setScore] = useState(0)
+  const lastReportedScoreRef = useRef(score)
   const [lives, setLives] = useState(1)
   const [gameOver, setGameOver] = useState(false)
   const [gamePaused, setGamePaused] = useState(false)
@@ -66,6 +67,23 @@ export default function SnakeGame({ isCompetitionMode, onGameOver, onScoreUpdate
     } while (attempts < 100 && avoidPositions.some((p) => p.x === position.x && p.y === position.y))
     return position
   }, [])
+
+  // Notify parent after game ends
+useEffect(() => {
+  if (gameOver) {
+    onGameOver(score)
+  }
+}, [gameOver, score, onGameOver])
+
+useEffect(() => {
+  if (!onScoreUpdate) return
+    
+  if (score !== lastReportedScoreRef.current) {
+    lastReportedScoreRef.current = score
+    onScoreUpdate(score)
+  }
+}, [score, onScoreUpdate])
+
 
   // Spawn initial food
   useEffect(() => {
@@ -161,14 +179,14 @@ export default function SnakeGame({ isCompetitionMode, onGameOver, onScoreUpdate
           // Check boundary collision
           if (newHead.x < 0 || newHead.x >= GRID_SIZE || newHead.y < 0 || newHead.y >= GRID_SIZE) {
             setGameOver(true)
-            onGameOver(score)
+            playSound("gameOver")
             return prevSnake
           }
 
           // Check wall collision
           if (walls.some((wall) => wall.x === newHead.x && wall.y === newHead.y)) {
             setGameOver(true)
-            onGameOver(score)
+            playSound("gameOver")
             return prevSnake
           }
         } else {
@@ -180,7 +198,7 @@ export default function SnakeGame({ isCompetitionMode, onGameOver, onScoreUpdate
         // Check self collision
         if (prevSnake.some((segment) => segment.x === newHead.x && segment.y === newHead.y)) {
           setGameOver(true)
-          onGameOver(score)
+          playSound("gameOver")
           return prevSnake
         }
 
@@ -194,11 +212,8 @@ export default function SnakeGame({ isCompetitionMode, onGameOver, onScoreUpdate
 
           switch (hitItem.type) {
             case "food":
-              setScore((s) => {
-                const newScore = s + 1
-                onScoreUpdate?.(newScore)
-                return newScore
-              })
+              setScore((s) => s + 1)
+            
               playSound("food")
               // Increase speed every 5 points
               if ((score + 1) % 5 === 0 && speed > MAX_SPEED) {
@@ -207,11 +222,7 @@ export default function SnakeGame({ isCompetitionMode, onGameOver, onScoreUpdate
               break
 
             case "bigFood":
-              setScore((s) => {
-                const newScore = s + 3
-                onScoreUpdate?.(newScore)
-                return newScore
-              })
+              setScore((s) => s + 3) 
               newSnake = [newHead, ...prevSnake, prevSnake[prevSnake.length - 1], prevSnake[prevSnake.length - 1]]
               playSound("food")
               break
@@ -224,7 +235,6 @@ export default function SnakeGame({ isCompetitionMode, onGameOver, onScoreUpdate
                 playSound("bomb")
               } else {
                 setGameOver(true)
-                onGameOver(score)
                 playSound("gameOver")
                 return prevSnake
               }
@@ -232,11 +242,7 @@ export default function SnakeGame({ isCompetitionMode, onGameOver, onScoreUpdate
 
             case "heart":
               setLives((l) => l + 1)
-              setScore((s) => {
-                const newScore = s + 5
-                onScoreUpdate?.(newScore)
-                return newScore
-              })
+              setScore((s) => s + 5)
               playSound("heart")
               break
           }
@@ -355,6 +361,7 @@ export default function SnakeGame({ isCompetitionMode, onGameOver, onScoreUpdate
 
     touchStartRef.current = null
   }
+
 
   // Render canvas
   useEffect(() => {
