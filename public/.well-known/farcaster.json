@@ -1,10 +1,12 @@
 {
-  "name": "Snake Game",
-  "description": "Classic Snake, weekly competition leaderboard",
-  "icon": "/icon.png",
-  "homeurl": "https://v0-snake-game-farcaster-mini-app.vercel.app",
-  "developer": {
-    "name": "Your Name",
-    "url": "https://github.com/KNKDJWI"
+  "frame": {
+    "name": "Snake Game",
+    "iconUrl": "https://snake-game.vercel.app/icon.png",
+    "homeUrl": "https://snake-game.vercel.app"
+  },
+  "description": "Classic snake game mini app built for Farcaster. Compete for the highest score!",
+  "author": {
+    "name": "Ghost",
+    "url": "https://snake-game.vercel.app"
   }
 }
