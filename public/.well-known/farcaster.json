@@ -2,11 +2,11 @@
   "frame": {
     "name": "Snake Game",
     "iconUrl": "https://gemini.google.com/share/59dcc48f49a6",
-    "homeUrl": "https://v0-snake-game-farcaster-mini-app-w8l7-l6iqzsv5i.vercel.app"
+    "homeUrl": "https://v0-snake-game-farcaster-mini-app.vercel.app"
   },
   "description": "Classic snake game mini app built for Farcaster. Compete for the highest score!",
   "author": {
     "name": "Ghost",
-    "url": "https://v0-snake-game-farcaster-mini-app-w8l7-l6iqzsv5i.vercel.app"
+    "url": "https://v0-snake-game-farcaster-mini-app.vercel.app"
   }
 }
