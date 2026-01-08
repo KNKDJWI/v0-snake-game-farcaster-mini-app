@@ -1,3 +1,5 @@
+"use client" // ← Make this a Client Component so hooks work
+
 import type React from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
@@ -23,18 +25,9 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      {
-        url: "/icon.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.png",
-        type: "image/svg+xml",
-      },
+      { url: "/icon.png", media: "(prefers-color-scheme: light)" },
+      { url: "/icon.png", media: "(prefers-color-scheme: dark)" },
+      { url: "/icon.png", type: "image/svg+xml" },
     ],
     apple: "/icon.png",
   },
@@ -42,15 +35,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
-  useEffect(()=> {
+}) {
+  useEffect(() => {
+    // Notify Farcaster Mini App that the app is ready
     sdk.actions.ready()
   }, [])
+
   return (
     <html lang="en">
-      <body className={`font-sans antialiased`}>
+      <body className="font-sans antialiased">
         <Providers>{children}</Providers>
         <Analytics />
       </body>
