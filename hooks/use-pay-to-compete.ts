@@ -30,9 +30,7 @@ export function usePayToCompete() {
 
   // Mark as paid when confirmed
   useEffect(() => {
-    if (isConfirmed) {
-      setIsPaid(true)
-    }
+    if (isConfirmed) setIsPaid(true)
   }, [isConfirmed])
 
   // Fallback: mark paid if confirmation is slow
@@ -53,7 +51,7 @@ export function usePayToCompete() {
     setError(null)
 
     try {
-      // 🔑 Auto-select connector based on environment
+      // Auto-connect if wallet not connected
       if (!isConnected) {
         const isFarcaster =
           typeof window !== "undefined" &&
@@ -64,11 +62,13 @@ export function usePayToCompete() {
           : connectors.find(c => c.id === "injected")!
 
         await connectAsync({ connector })
+
+        // Wait a tick so useAccount updates
+        await new Promise(resolve => setTimeout(resolve, 100))
       }
 
-      if (!sendTransaction) {
-        throw new Error("Transaction not ready")
-      }
+      if (!address) throw new Error("Wallet not connected")
+      if (!sendTransaction) throw new Error("Transaction not ready")
 
       await sendTransaction({
         to: RECIPIENT_ADDRESS as `0x${string}`,
