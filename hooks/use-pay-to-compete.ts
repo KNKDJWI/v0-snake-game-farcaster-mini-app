@@ -1,7 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from "wagmi"
+import {
+  useAccount,
+  useSendTransaction,
+  useWaitForTransactionReceipt,
+  useConnect,
+} from "wagmi"
+import { injected } from "wagmi/connectors"
 import { parseEther } from "viem"
 
 const PAYMENT_AMOUNT = "0.00001" // Base ETH
@@ -9,14 +15,18 @@ const RECIPIENT_ADDRESS = "0x25265b9dBEb6c653b0CA281110Bb0697a9685107"
 
 export function usePayToCompete() {
   const { address, isConnected } = useAccount()
+  const { connectAsync } = useConnect()
+
   const [isPaid, setIsPaid] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const { data: hash, sendTransaction, isPending } = useSendTransaction()
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
-    hash,
-    pollingInterval: 1000, // check every 1 second
-  })
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+      pollingInterval: 1000,
+    })
 
   // Mark as paid when confirmed
   useEffect(() => {
@@ -25,16 +35,16 @@ export function usePayToCompete() {
     }
   }, [isConfirmed])
 
-  // Timeout fallback: mark as paid after 30s if confirmation is slow
+  // Fallback: mark paid if confirmation is slow
   useEffect(() => {
     if (!hash) return
 
     const timer = setTimeout(() => {
       if (!isConfirmed) {
-        console.warn("Transaction taking too long, marking as paid anyway")
+        console.warn("Confirmation slow — proceeding anyway")
         setIsPaid(true)
       }
-    }, 30000) // 30s
+    }, 30000)
 
     return () => clearTimeout(timer)
   }, [hash, isConfirmed])
@@ -42,27 +52,22 @@ export function usePayToCompete() {
   const handlePayment = async () => {
     setError(null)
 
-    if (!address) {
-      setError("Wallet not ready yet")
-      return
-    }
-
-    if (!sendTransaction) {
-      console.error("sendTransaction function is undefined. Wagmi not ready yet.")
-      setError("Transaction function not ready")
-      return
-    }
-
-    const txParams = {
-      to: RECIPIENT_ADDRESS as `0x${string}`,
-      value: parseEther(PAYMENT_AMOUNT),
-    }
-
-    console.log("[Payment] Calling sendTransaction with:", txParams)
-
     try {
-      const tx = await sendTransaction(txParams)
-      console.log("[Payment] Transaction sent:", tx)
+      // 🔑 THIS IS THE FIX
+      if (!isConnected) {
+        await connectAsync({
+          connector: injected({ shimDisconnect: true }),
+        })
+      }
+
+      if (!sendTransaction) {
+        throw new Error("Transaction not ready")
+      }
+
+      await sendTransaction({
+        to: RECIPIENT_ADDRESS as `0x${string}`,
+        value: parseEther(PAYMENT_AMOUNT),
+      })
     } catch (err: any) {
       console.error("[Payment Error]", err)
       setError(err?.message || "Transaction failed")
