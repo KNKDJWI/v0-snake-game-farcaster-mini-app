@@ -16,7 +16,6 @@ interface CompetitionModeProps {
 
 export default function CompetitionMode({ onGameOver }: CompetitionModeProps) {
   const { address, isConnected } = useAccount()
-  const { connectors, connect } = useConnect()
   const { isPaid, isProcessing, handlePayment, error } = usePayToCompete()
   const [gameStarted, setGameStarted] = useState(false)
   const [currentScore, setCurrentScore] = useState(0)
@@ -31,15 +30,6 @@ export default function CompetitionMode({ onGameOver }: CompetitionModeProps) {
       if (stored) setHighScore(Number.parseInt(stored, 10))
     }
   }, [address])
-
-  const handleConnectWallet = () => {
-    const connector = connectors[0]
-    if (connector) {
-      connect({ connector })
-    }
-  }
-
-
 
   // Start the game automatically once payment is confirmed
   useEffect(() => {
@@ -84,30 +74,7 @@ export default function CompetitionMode({ onGameOver }: CompetitionModeProps) {
     // TODO: Implement actual on-chain storage
   }
 
-  // --- UI Sections ---
-  if (!isConnected) {
-    return (
-      <div className="max-w-md mx-auto">
-        <Card className="p-6 bg-gray-800/50 border-gray-700 backdrop-blur">
-          <h2 className="text-2xl font-bold mb-4 text-center">Enter Competition</h2>
-          <p className="text-gray-300 mb-6 text-center">
-            Connect your wallet to enter the competition and compete for the top spot on the leaderboard!
-          </p>
 
-          <Alert className="mb-6 bg-blue-900/20 border-blue-700">
-            <AlertDescription className="text-sm text-blue-200">
-              Competition entry requires 0.00001 Base ETH payment. Your scores will be saved on-chain and you'll be
-              eligible for the weekly leaderboard.
-            </AlertDescription>
-          </Alert>
-
-          <Button onClick={handleConnectWallet} className="w-full h-14 text-lg bg-blue-600 hover:bg-blue-700">
-            Connect Wallet
-          </Button>
-        </Card>
-      </div>
-    )
-  }
 
   if (!isPaid && !gameStarted) {
     return (
