@@ -7,7 +7,7 @@ import {
   useWaitForTransactionReceipt,
   useConnect,
 } from "wagmi"
-import { injected } from "wagmi/connectors"
+import { injected, coinbaseWallet } from "wagmi/connectors"
 import { parseEther } from "viem"
 
 const PAYMENT_AMOUNT = "0.00001" // Base ETH
@@ -15,7 +15,7 @@ const RECIPIENT_ADDRESS = "0x25265b9dBEb6c653b0CA281110Bb0697a9685107"
 
 export function usePayToCompete() {
   const { address, isConnected } = useAccount()
-  const { connectAsync } = useConnect()
+  const { connectAsync, connectors } = useConnect()
 
   const [isPaid, setIsPaid] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -53,11 +53,17 @@ export function usePayToCompete() {
     setError(null)
 
     try {
-      // 🔑 THIS IS THE FIX
+      // 🔑 Auto-select connector based on environment
       if (!isConnected) {
-        await connectAsync({
-          connector: injected({ shimDisconnect: true }),
-        })
+        const isFarcaster =
+          typeof window !== "undefined" &&
+          window.location.ancestorOrigins?.[0]?.includes("warpcast")
+
+        const connector = isFarcaster
+          ? connectors.find(c => c.id === "coinbaseWalletSDK")!
+          : connectors.find(c => c.id === "injected")!
+
+        await connectAsync({ connector })
       }
 
       if (!sendTransaction) {
