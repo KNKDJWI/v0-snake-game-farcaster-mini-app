@@ -18,38 +18,26 @@ export const metadata: Metadata = {
     "fc:frame:image": "https://gemini.google.com/share/59dcc48f49a6",
     "fc:frame:button:1": "Play Snake",
     "fc:frame:button:1:action": "link",
-    "fc:frame:button:1:target": "https://v0-snake-game-farcaster-mini-app.vercel.app",
+    "fc:frame:button:1:target":
+      "https://v0-snake-game-farcaster-mini-app.vercel.app",
   },
   icons: {
     icon: [
-      {
-        url: "/icon.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.png",
-        type: "image/svg+xml",
-      },
+      { url: "/icon.png", media: "(prefers-color-scheme: light)" },
+      { url: "/icon.png", media: "(prefers-color-scheme: dark)" },
+      { url: "/icon.png", type: "image/svg+xml" },
     ],
     apple: "/icon.png",
   },
 }
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`font-sans antialiased`}>
+      <body className="font-sans antialiased">
         <Providers>
-          <ClientApp>{children}</ClientApp>{/* Farcaster hook live here */}
-          </Providers>
+          <ClientApp>{children}</ClientApp> {/* Farcaster hook runs inside ClientApp */}
+        </Providers>
         <Analytics />
       </body>
     </html>

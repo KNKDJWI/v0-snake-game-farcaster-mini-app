@@ -42,8 +42,8 @@ export function usePayToCompete() {
   const handlePayment = async () => {
     setError(null)
 
-    if (!isConnected || !address) {
-      setError("Wallet not connected")
+    if (!address) {
+      setError("Wallet not ready yet")
       return
     }
 

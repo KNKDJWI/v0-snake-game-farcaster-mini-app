@@ -12,6 +12,11 @@ interface CompetitionModeProps {
   onGameOver: (score: number) => void
 }
 
+const isFarcaster =
+  typeof window !== "undefined" &&
+  (window as any).farcaster !== undefined
+
+
 export default function CompetitionMode({ onGameOver }: CompetitionModeProps) {
   const { address, isConnected } = useAccount()
   const { connectors, connect } = useConnect()
@@ -31,9 +36,24 @@ export default function CompetitionMode({ onGameOver }: CompetitionModeProps) {
   }, [address])
 
   const handleConnectWallet = async () => {
-    const connector = connectors[0]
-    if (connector) connect({ connector })
+  // In Farcaster, wallet is already connected by the host
+  if (isFarcaster) {
+    console.log("Farcaster environment detected — wallet auto-connected")
+    return
   }
+
+  const connector = connectors[0]
+  if (connector) {
+    connect({ connector })
+  }
+}
+
+
+  useEffect(() => {
+    if (isFarcaster && address && !gameStarted && !showFinalScore) {
+      console.log("Auto-entering competition via Farcaster wallet")
+    }
+  }, [isFarcaster, address, gameStarted, showFinalScore])
 
   // Start the game automatically once payment is confirmed
   useEffect(() => {
@@ -79,7 +99,7 @@ export default function CompetitionMode({ onGameOver }: CompetitionModeProps) {
   }
 
   // --- UI Sections ---
-  if (!isConnected) {
+  if (!isConnected && !isFarcaster) {
     return (
       <div className="max-w-md mx-auto">
         <Card className="p-6 bg-gray-800/50 border-gray-700 backdrop-blur">

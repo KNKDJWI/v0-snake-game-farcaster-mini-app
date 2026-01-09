@@ -7,6 +7,7 @@ import SnakeGame from "@/components/snake-game"
 import Leaderboard from "@/components/leaderboard"
 import CompetitionMode from "@/components/competition-mode"
 
+
 type GameMode = "menu" | "free-play" | "competition" | "leaderboard"
 
 export default function Home() {
