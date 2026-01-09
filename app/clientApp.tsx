@@ -1,14 +1,17 @@
 "use client"
 
-import React, { useEffect } from "react"
+import { useEffect } from "react"
 import { sdk } from "@farcaster/frame-sdk"
 
-const ClientApp: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export default function ClientApp({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   useEffect(() => {
+    // This is the critical line Farcaster needs
     sdk.actions.ready()
   }, [])
 
   return <>{children}</>
 }
-
-export default ClientApp
