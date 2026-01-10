@@ -35,9 +35,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="font-sans antialiased">
-        <Providers>
-          <ClientApp>{children}</ClientApp> {/* Farcaster hook runs inside ClientApp */}
-        </Providers>
+        <ClientApp>
+          <Providers>{children}</Providers> {/* Farcaster hook runs inside ClientApp */}
+        </ClientApp>
         <Analytics />
       </body>
     </html>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { sdk } from "@farcaster/frame-sdk"
 
 export default function ClientApp({
@@ -8,10 +8,15 @@ export default function ClientApp({
 }: {
   children: React.ReactNode
 }) {
+  const [ready, setReady] = useState(false)
+
   useEffect(() => {
-    // This is the critical line Farcaster needs
-    sdk.actions.ready()
+    sdk.actions.ready().then(() => {
+      setReady(true)
+    })
   }, [])
+
+  if (!ready) return null
 
   return <>{children}</>
 }
