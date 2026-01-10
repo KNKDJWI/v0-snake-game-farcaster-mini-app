@@ -15,6 +15,11 @@ const PAYMENT_AMOUNT = "0.00001"
 const RECIPIENT_ADDRESS =
   "0x25265b9dBEb6c653b0CA281110Bb0697a9685107"
 
+// 🔒 environment detection happens ONCE
+const IS_FARCASTER =
+  typeof window !== "undefined" &&
+  window.location.ancestorOrigins?.[0]?.includes("warpcast")
+
 export function usePayToCompete() {
   const { isConnected } = useAccount()
   const { connectors, connectAsync } = useConnect()
@@ -29,7 +34,7 @@ export function usePayToCompete() {
     pollingInterval: 1000,
   })
 
-  // ✅ reset payment state on hard refresh
+  // ✅ payment state always resets on refresh
   useEffect(() => {
     setIsPaid(false)
     setError(null)
@@ -39,37 +44,30 @@ export function usePayToCompete() {
     if (isSuccess) setIsPaid(true)
   }, [isSuccess])
 
-  const isFarcaster =
-    typeof window !== "undefined" &&
-    window.location.ancestorOrigins?.[0]?.includes("warpcast")
-
   const handlePayment = async () => {
     if (isProcessing || isPaid) return
 
     setIsProcessing(true)
     setError(null)
 
-    try {
-      // ----------------------------------
-      // FARCASTER FLOW (HARD GUARDED)
-      // ----------------------------------
-      if (isFarcaster) {
+    // ================================
+    // FARCASTER — ISOLATED PATH
+    // ================================
+    if (IS_FARCASTER) {
+      try {
         const provider =
           (await sdk.wallet.getEthereumProvider()) as
             | EIP1193Provider
             | undefined
 
-        // 🚫 Wallet session is gone → STOP
         if (!provider) {
           setError(
-            "Farcaster session expired. Close and reopen the frame to pay again."
+            "Session expired. Close the frame and reopen it to pay again."
           )
           return
         }
 
-        await provider.request({
-          method: "eth_requestAccounts",
-        })
+        await provider.request({ method: "eth_requestAccounts" })
 
         await provider.request({
           method: "eth_sendTransaction",
@@ -82,17 +80,23 @@ export function usePayToCompete() {
         })
 
         setIsPaid(true)
-        return // ⛔ NEVER fall through
+        return
+      } catch (err: any) {
+        console.error("[Farcaster Payment Error]", err)
+        setError("Payment failed")
+        return
+      } finally {
+        setIsProcessing(false)
       }
+    }
 
-      // ----------------------------------
-      // BROWSER FLOW (WAGMI ONLY)
-      // ----------------------------------
+    // ================================
+    // BROWSER — ISOLATED PATH
+    // ================================
+    try {
       if (!isConnected) {
         const injected = connectors.find(c => c.id === "injected")
-        if (!injected) {
-          throw new Error("No browser wallet found")
-        }
+        if (!injected) throw new Error("No browser wallet found")
         await connectAsync({ connector: injected })
       }
 
@@ -101,7 +105,7 @@ export function usePayToCompete() {
         value: parseEther(PAYMENT_AMOUNT),
       })
     } catch (err: any) {
-      console.error("[Payment Error]", err)
+      console.error("[Browser Payment Error]", err)
       setError(err?.message || "Transaction failed")
     } finally {
       setIsProcessing(false)
