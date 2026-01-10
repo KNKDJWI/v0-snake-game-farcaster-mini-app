@@ -46,7 +46,7 @@ export function usePayToCompete() {
 
     try {
       // ----------------------------
-      // Already paid? Check external (localStorage for now)
+      // Already paid? (external check / localStorage)
       // ----------------------------
       if (isPaid) {
         setIsProcessing(false)
@@ -65,7 +65,7 @@ export function usePayToCompete() {
           | undefined
 
         if (!provider) {
-          // Farcaster session expired → friendly message
+          // Farcaster provider missing (session expired)
           setNeedsReload(true)
           setIsProcessing(false)
           return
@@ -85,7 +85,7 @@ export function usePayToCompete() {
           ],
         })
 
-        // Persist payment externally (localStorage or backend)
+        // Persist payment externally
         if (typeof window !== "undefined") {
           localStorage.setItem(FARCASTER_PAID_KEY, "true")
         }
@@ -125,6 +125,6 @@ export function usePayToCompete() {
     isProcessing,
     handlePayment,
     error,
-    needsReload, // UI can show "Reload Warpcast to pay"
+    needsReload, // UI shows friendly message if provider is gone
   }
 }
