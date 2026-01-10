@@ -46,16 +46,15 @@ export function usePayToCompete() {
 
     try {
       // ----------------------------
-      // SPA / External Payment Check
+      // Already paid? Check external (localStorage for now)
       // ----------------------------
       if (isPaid) {
-        // User already paid (localStorage or backend check)
         setIsProcessing(false)
         return
       }
 
       // ----------------------------
-      // Farcaster Flow
+      // Farcaster flow
       // ----------------------------
       const isFarcaster =
         typeof window !== "undefined" && !!(window as any)?.FarcasterFrame
@@ -66,13 +65,13 @@ export function usePayToCompete() {
           | undefined
 
         if (!provider) {
-          // Farcaster session expired
+          // Farcaster session expired → friendly message
           setNeedsReload(true)
           setIsProcessing(false)
           return
         }
 
-        // Connect wallet
+        // Connect wallet explicitly
         await provider.request({ method: "eth_requestAccounts" })
 
         // Send transaction
@@ -86,18 +85,18 @@ export function usePayToCompete() {
           ],
         })
 
-        // Persist payment
+        // Persist payment externally (localStorage or backend)
         if (typeof window !== "undefined") {
           localStorage.setItem(FARCASTER_PAID_KEY, "true")
         }
 
         setIsPaid(true)
         setIsProcessing(false)
-        return
+        return // exit → no Wagmi fallback
       }
 
       // ----------------------------
-      // Browser Flow (Wagmi)
+      // Browser (Wagmi) flow
       // ----------------------------
       if (!isConnected) {
         const injectedConnector = connectors.find(c => c.id === "injected")
