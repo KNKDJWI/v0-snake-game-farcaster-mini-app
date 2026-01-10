@@ -13,12 +13,19 @@ import { type EIP1193Provider } from "viem"
 
 const PAYMENT_AMOUNT = "0.00001"
 const RECIPIENT_ADDRESS = "0x25265b9dBEb6c653b0CA281110Bb0697a9685107"
+const FARCASTER_PAID_KEY = "farcasterPaid"
 
 export function usePayToCompete() {
   const { address, isConnected } = useAccount()
   const { connectors, connectAsync } = useConnect()
 
-  const [isPaid, setIsPaid] = useState(false)
+  const [isPaid, setIsPaid] = useState(() => {
+    // persist Farcaster payment across refresh
+    if (typeof window !== "undefined") {
+      return !!localStorage.getItem(FARCASTER_PAID_KEY)
+    }
+    return false
+  })
   const [error, setError] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
 
@@ -38,13 +45,9 @@ export function usePayToCompete() {
     setIsProcessing(true)
 
     try {
-      // ----------------------------
-      // FARCASTER DETECTION
-      // ----------------------------
       const isFarcaster =
         typeof window !== "undefined" &&
-        (!!(window as any)?.FarcasterFrame ||
-          window.location.href.includes("warpcast"))
+        !!(window as any)?.FarcasterFrame
 
       // ----------------------------
       // FARCASTER FLOW
@@ -58,7 +61,7 @@ export function usePayToCompete() {
           throw new Error("Farcaster wallet not available yet")
         }
 
-        // 🔑 REQUIRED: explicit wallet connection
+        // 🔑 Explicit wallet connection
         await provider.request({ method: "eth_requestAccounts" })
 
         // send tx
@@ -72,9 +75,14 @@ export function usePayToCompete() {
           ],
         })
 
+        // persist Farcaster payment
+        if (typeof window !== "undefined") {
+          localStorage.setItem(FARCASTER_PAID_KEY, "true")
+        }
+
         setIsPaid(true)
         setIsProcessing(false)
-        return
+        return // <- exit early to avoid wagmi fallback
       }
 
       // ----------------------------
