@@ -4,18 +4,27 @@ import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { usePayToCompete } from "@/hooks/use-pay-to-compete"
-import { useAccount, useConnect } from "wagmi"
 import SnakeGame from "@/components/snake-game"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface CompetitionModeProps {
   onGameOver: (score: number) => void
 }
-
+const IS_FARCASTER =
+  typeof window !== "undefined" &&
+  window.location.ancestorOrigins?.[0]?.includes("warpcast")
 
 
 export default function CompetitionMode({ onGameOver }: CompetitionModeProps) {
-  const { address, isConnected } = useAccount()
+  const [address, setAddress] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (IS_FARCASTER) {
+    // Optional: get Farcaster-connected address later if needed
+      setAddress(null)
+    }
+  }, [])
+
   const { isPaid, isProcessing, handlePayment, error } = usePayToCompete()
   const [gameStarted, setGameStarted] = useState(false)
   const [currentScore, setCurrentScore] = useState(0)
@@ -25,11 +34,11 @@ export default function CompetitionMode({ onGameOver }: CompetitionModeProps) {
 
   // Load high score from localStorage (placeholder for on-chain storage)
   useEffect(() => {
-    if (address) {
-      const stored = localStorage.getItem(`highscore_${address}`)
-      if (stored) setHighScore(Number.parseInt(stored, 10))
-    }
+    if (!address) return
+    const stored = localStorage.getItem(`highscore_${address}`)
+    if (stored) setHighScore(Number.parseInt(stored, 10))
   }, [address])
+
 
   // Start the game automatically once payment is confirmed
   useEffect(() => {
