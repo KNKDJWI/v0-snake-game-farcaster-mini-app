@@ -9,72 +9,68 @@ import {
 } from "wagmi"
 import { parseEther } from "viem"
 import { sdk } from "@farcaster/frame-sdk"
-import { type EIP1193Provider } from "viem"
+import type { EIP1193Provider } from "viem"
 
 const PAYMENT_AMOUNT = "0.00001"
-const RECIPIENT_ADDRESS = "0x25265b9dBEb6c653b0CA281110Bb0697a9685107"
-const FARCASTER_PAID_KEY = "farcasterPaid" // replace with backend / smart contract later
+const RECIPIENT_ADDRESS =
+  "0x25265b9dBEb6c653b0CA281110Bb0697a9685107"
 
 export function usePayToCompete() {
-  const { address, isConnected } = useAccount()
+  const { isConnected } = useAccount()
   const { connectors, connectAsync } = useConnect()
 
-  const [isPaid, setIsPaid] = useState(() => {
-    if (typeof window !== "undefined") {
-      return !!localStorage.getItem(FARCASTER_PAID_KEY)
-    }
-    return false
-  })
+  const [isPaid, setIsPaid] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [needsReload, setNeedsReload] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const { data: hash, sendTransaction } = useSendTransaction()
-  const { isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+  const { isSuccess } = useWaitForTransactionReceipt({
     hash,
     pollingInterval: 1000,
   })
 
+  // ✅ reset payment state on hard refresh
   useEffect(() => {
-    if (isConfirmed) setIsPaid(true)
-  }, [isConfirmed])
+    setIsPaid(false)
+    setError(null)
+  }, [])
+
+  useEffect(() => {
+    if (isSuccess) setIsPaid(true)
+  }, [isSuccess])
+
+  const isFarcaster =
+    typeof window !== "undefined" &&
+    window.location.ancestorOrigins?.[0]?.includes("warpcast")
 
   const handlePayment = async () => {
-    setError(null)
-    setNeedsReload(false)
+    if (isProcessing || isPaid) return
+
     setIsProcessing(true)
+    setError(null)
 
     try {
-      // ----------------------------
-      // Already paid? External check
-      // ----------------------------
-      if (isPaid) {
-        setIsProcessing(false)
-        return
-      }
-
-      // ----------------------------
-      // Detect Farcaster session
-      // ----------------------------
-      const isFarcaster =
-        typeof window !== "undefined" && !!(window as any)?.FarcasterFrame
-
+      // ----------------------------------
+      // FARCASTER FLOW (HARD GUARDED)
+      // ----------------------------------
       if (isFarcaster) {
-        const provider = (await sdk.wallet.getEthereumProvider()) as
-          | EIP1193Provider
-          | undefined
+        const provider =
+          (await sdk.wallet.getEthereumProvider()) as
+            | EIP1193Provider
+            | undefined
 
+        // 🚫 Wallet session is gone → STOP
         if (!provider) {
-          // Farcaster session expired → friendly message
-          setNeedsReload(true)
-          setIsProcessing(false)
+          setError(
+            "Farcaster session expired. Close and reopen the frame to pay again."
+          )
           return
         }
 
-        // Connect wallet
-        await provider.request({ method: "eth_requestAccounts" })
+        await provider.request({
+          method: "eth_requestAccounts",
+        })
 
-        // Send transaction
         await provider.request({
           method: "eth_sendTransaction",
           params: [
@@ -85,26 +81,20 @@ export function usePayToCompete() {
           ],
         })
 
-        // Persist payment externally
-        if (typeof window !== "undefined") {
-          localStorage.setItem(FARCASTER_PAID_KEY, "true")
-        }
-
         setIsPaid(true)
-        setIsProcessing(false)
-        return // exit → no Wagmi fallback
+        return // ⛔ NEVER fall through
       }
 
-      // ----------------------------
-      // Browser wallet flow (Wagmi)
-      // ----------------------------
+      // ----------------------------------
+      // BROWSER FLOW (WAGMI ONLY)
+      // ----------------------------------
       if (!isConnected) {
         const injected = connectors.find(c => c.id === "injected")
-        if (!injected) throw new Error("No browser wallet found")
+        if (!injected) {
+          throw new Error("No browser wallet found")
+        }
         await connectAsync({ connector: injected })
       }
-
-      if (!sendTransaction) throw new Error("Transaction not ready")
 
       await sendTransaction({
         to: RECIPIENT_ADDRESS as `0x${string}`,
@@ -119,12 +109,9 @@ export function usePayToCompete() {
   }
 
   return {
-    address,
-    isConnected,
     isPaid,
     isProcessing,
-    handlePayment,
     error,
-    needsReload, // UI shows friendly reload message
+    handlePayment,
   }
 }
