@@ -9,13 +9,7 @@ import {
 } from "wagmi"
 import { parseEther } from "viem"
 import { sdk } from "@farcaster/frame-sdk"
-import {
-  createWalletClient,
-  custom,
-  type EIP1193Provider,
-} from "viem"
-import { base } from "viem/chains"
-
+import { type EIP1193Provider } from "viem"
 
 const PAYMENT_AMOUNT = "0.00001"
 const RECIPIENT_ADDRESS = "0x25265b9dBEb6c653b0CA281110Bb0697a9685107"
@@ -39,30 +33,28 @@ export function usePayToCompete() {
     if (isConfirmed) setIsPaid(true)
   }, [isConfirmed])
 
-  const isFarcaster =
-    typeof window !== "undefined" &&
-    window.location.ancestorOrigins?.[0]?.includes("warpcast")
-
   const handlePayment = async () => {
     setError(null)
+    setIsProcessing(true)
 
     try {
       const isFarcaster =
         typeof window !== "undefined" &&
         window.location.ancestorOrigins?.[0]?.includes("warpcast")
 
-    // ----------------------------
-    // FARCASTER FLOW
-    // ----------------------------
+      // ----------------------------
+      // FARCASTER FLOW
+      // ----------------------------
       if (isFarcaster) {
-        const provider =
-          (await sdk.wallet.getEthereumProvider()) as EIP1193Provider
+        const provider = (await sdk.wallet.getEthereumProvider()) as
+          | EIP1193Provider
+          | undefined
 
         if (!provider) {
-          throw new Error("Farcaster wallet not available")
+          throw new Error("Farcaster wallet not available yet")
         }
 
-      // 🔑 REQUIRED: explicit wallet connection
+        // 🔑 REQUIRED: explicit wallet connection
         await provider.request({ method: "eth_requestAccounts" })
 
         await provider.request({
@@ -75,12 +67,14 @@ export function usePayToCompete() {
           ],
         })
 
+        setIsPaid(true)
+        setIsProcessing(false)
         return
       }
 
-    // ----------------------------
-    // BROWSER FLOW (wagmi)
-    // ----------------------------
+      // ----------------------------
+      // BROWSER FLOW (wagmi)
+      // ----------------------------
       if (!isConnected) {
         const injectedConnector = connectors.find(c => c.id === "injected")
         if (!injectedConnector) throw new Error("No browser wallet found")
@@ -98,9 +92,10 @@ export function usePayToCompete() {
     } catch (err: any) {
       console.error("[Payment Error]", err)
       setError(err?.message || "Transaction failed")
+    } finally {
+      setIsProcessing(false)
     }
   }
-
 
   return {
     address,
