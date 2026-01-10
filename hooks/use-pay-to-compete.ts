@@ -46,6 +46,7 @@ export function usePayToCompete() {
     setIsProcessing(true)
 
     try {
+      // Detect Farcaster session reliably
       const isFarcaster =
         typeof window !== "undefined" &&
         !!(window as any)?.FarcasterFrame
@@ -59,7 +60,7 @@ export function usePayToCompete() {
           | undefined
 
         if (!provider) {
-          // Farcaster session expired
+          // Farcaster session expired or not initialized
           setNeedsReload(true)
           setIsProcessing(false)
           return
@@ -68,7 +69,7 @@ export function usePayToCompete() {
         // 🔑 Explicit wallet connection
         await provider.request({ method: "eth_requestAccounts" })
 
-        // send tx
+        // Send transaction
         await provider.request({
           method: "eth_sendTransaction",
           params: [
@@ -79,13 +80,14 @@ export function usePayToCompete() {
           ],
         })
 
+        // Persist Farcaster payment
         if (typeof window !== "undefined") {
           localStorage.setItem(FARCASTER_PAID_KEY, "true")
         }
 
         setIsPaid(true)
         setIsProcessing(false)
-        return
+        return // exit so wagmi fallback never runs
       }
 
       // ----------------------------
@@ -120,6 +122,6 @@ export function usePayToCompete() {
     isProcessing,
     handlePayment,
     error,
-    needsReload, // <- if true, UI can show "Reload Warpcast to pay"
+    needsReload, // UI can show: "Reload Warpcast to pay"
   }
 }
