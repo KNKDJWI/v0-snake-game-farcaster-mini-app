@@ -13,7 +13,7 @@ import { type EIP1193Provider } from "viem"
 
 const PAYMENT_AMOUNT = "0.00001"
 const RECIPIENT_ADDRESS = "0x25265b9dBEb6c653b0CA281110Bb0697a9685107"
-const FARCASTER_PAID_KEY = "farcasterPaid"
+const FARCASTER_PAID_KEY = "farcasterPaid" // replace with backend / smart contract later
 
 export function usePayToCompete() {
   const { address, isConnected } = useAccount()
@@ -25,9 +25,9 @@ export function usePayToCompete() {
     }
     return false
   })
-  const [error, setError] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [needsReload, setNeedsReload] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const { data: hash, sendTransaction } = useSendTransaction()
   const { isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -46,7 +46,7 @@ export function usePayToCompete() {
 
     try {
       // ----------------------------
-      // Already paid? (external check / localStorage)
+      // Already paid? External check
       // ----------------------------
       if (isPaid) {
         setIsProcessing(false)
@@ -54,7 +54,7 @@ export function usePayToCompete() {
       }
 
       // ----------------------------
-      // Farcaster flow
+      // Detect Farcaster session
       // ----------------------------
       const isFarcaster =
         typeof window !== "undefined" && !!(window as any)?.FarcasterFrame
@@ -65,13 +65,13 @@ export function usePayToCompete() {
           | undefined
 
         if (!provider) {
-          // Farcaster provider missing (session expired)
+          // Farcaster session expired → friendly message
           setNeedsReload(true)
           setIsProcessing(false)
           return
         }
 
-        // Connect wallet explicitly
+        // Connect wallet
         await provider.request({ method: "eth_requestAccounts" })
 
         // Send transaction
@@ -96,12 +96,12 @@ export function usePayToCompete() {
       }
 
       // ----------------------------
-      // Browser (Wagmi) flow
+      // Browser wallet flow (Wagmi)
       // ----------------------------
       if (!isConnected) {
-        const injectedConnector = connectors.find(c => c.id === "injected")
-        if (!injectedConnector) throw new Error("No browser wallet found")
-        await connectAsync({ connector: injectedConnector })
+        const injected = connectors.find(c => c.id === "injected")
+        if (!injected) throw new Error("No browser wallet found")
+        await connectAsync({ connector: injected })
       }
 
       if (!sendTransaction) throw new Error("Transaction not ready")
@@ -125,6 +125,6 @@ export function usePayToCompete() {
     isProcessing,
     handlePayment,
     error,
-    needsReload, // UI shows friendly message if provider is gone
+    needsReload, // UI shows friendly reload message
   }
 }
