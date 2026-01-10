@@ -30,7 +30,6 @@ export function usePayToCompete() {
   const [needsReload, setNeedsReload] = useState(false)
 
   const { data: hash, sendTransaction } = useSendTransaction()
-
   const { isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash,
     pollingInterval: 1000,
@@ -46,27 +45,34 @@ export function usePayToCompete() {
     setIsProcessing(true)
 
     try {
-      // Detect Farcaster session reliably
-      const isFarcaster =
-        typeof window !== "undefined" &&
-        !!(window as any)?.FarcasterFrame
+      // ----------------------------
+      // SPA / External Payment Check
+      // ----------------------------
+      if (isPaid) {
+        // User already paid (localStorage or backend check)
+        setIsProcessing(false)
+        return
+      }
 
       // ----------------------------
-      // FARCASTER FLOW
+      // Farcaster Flow
       // ----------------------------
+      const isFarcaster =
+        typeof window !== "undefined" && !!(window as any)?.FarcasterFrame
+
       if (isFarcaster) {
-        let provider = (await sdk.wallet.getEthereumProvider()) as
+        const provider = (await sdk.wallet.getEthereumProvider()) as
           | EIP1193Provider
           | undefined
 
         if (!provider) {
-          // Farcaster session expired or not initialized
+          // Farcaster session expired
           setNeedsReload(true)
           setIsProcessing(false)
           return
         }
 
-        // 🔑 Explicit wallet connection
+        // Connect wallet
         await provider.request({ method: "eth_requestAccounts" })
 
         // Send transaction
@@ -80,18 +86,18 @@ export function usePayToCompete() {
           ],
         })
 
-        // Persist Farcaster payment
+        // Persist payment
         if (typeof window !== "undefined") {
           localStorage.setItem(FARCASTER_PAID_KEY, "true")
         }
 
         setIsPaid(true)
         setIsProcessing(false)
-        return // exit so wagmi fallback never runs
+        return
       }
 
       // ----------------------------
-      // BROWSER FLOW (wagmi)
+      // Browser Flow (Wagmi)
       // ----------------------------
       if (!isConnected) {
         const injectedConnector = connectors.find(c => c.id === "injected")
@@ -99,9 +105,7 @@ export function usePayToCompete() {
         await connectAsync({ connector: injectedConnector })
       }
 
-      if (!sendTransaction) {
-        throw new Error("Transaction not ready")
-      }
+      if (!sendTransaction) throw new Error("Transaction not ready")
 
       await sendTransaction({
         to: RECIPIENT_ADDRESS as `0x${string}`,
@@ -122,6 +126,6 @@ export function usePayToCompete() {
     isProcessing,
     handlePayment,
     error,
-    needsReload, // UI can show: "Reload Warpcast to pay"
+    needsReload, // UI can show "Reload Warpcast to pay"
   }
 }
