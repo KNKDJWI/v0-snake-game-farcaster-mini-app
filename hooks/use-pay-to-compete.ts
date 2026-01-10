@@ -38,9 +38,13 @@ export function usePayToCompete() {
     setIsProcessing(true)
 
     try {
+      // ----------------------------
+      // FARCASTER DETECTION
+      // ----------------------------
       const isFarcaster =
         typeof window !== "undefined" &&
-        window.location.ancestorOrigins?.[0]?.includes("warpcast")
+        (!!(window as any)?.FarcasterFrame ||
+          window.location.href.includes("warpcast"))
 
       // ----------------------------
       // FARCASTER FLOW
@@ -57,6 +61,7 @@ export function usePayToCompete() {
         // 🔑 REQUIRED: explicit wallet connection
         await provider.request({ method: "eth_requestAccounts" })
 
+        // send tx
         await provider.request({
           method: "eth_sendTransaction",
           params: [
