@@ -20,7 +20,6 @@ export function usePayToCompete() {
   const { connectors, connectAsync } = useConnect()
 
   const [isPaid, setIsPaid] = useState(() => {
-    // persist Farcaster payment across refresh
     if (typeof window !== "undefined") {
       return !!localStorage.getItem(FARCASTER_PAID_KEY)
     }
@@ -28,6 +27,7 @@ export function usePayToCompete() {
   })
   const [error, setError] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [needsReload, setNeedsReload] = useState(false)
 
   const { data: hash, sendTransaction } = useSendTransaction()
 
@@ -42,6 +42,7 @@ export function usePayToCompete() {
 
   const handlePayment = async () => {
     setError(null)
+    setNeedsReload(false)
     setIsProcessing(true)
 
     try {
@@ -53,12 +54,15 @@ export function usePayToCompete() {
       // FARCASTER FLOW
       // ----------------------------
       if (isFarcaster) {
-        const provider = (await sdk.wallet.getEthereumProvider()) as
+        let provider = (await sdk.wallet.getEthereumProvider()) as
           | EIP1193Provider
           | undefined
 
         if (!provider) {
-          throw new Error("Farcaster wallet not available yet")
+          // Farcaster session expired
+          setNeedsReload(true)
+          setIsProcessing(false)
+          return
         }
 
         // 🔑 Explicit wallet connection
@@ -75,14 +79,13 @@ export function usePayToCompete() {
           ],
         })
 
-        // persist Farcaster payment
         if (typeof window !== "undefined") {
           localStorage.setItem(FARCASTER_PAID_KEY, "true")
         }
 
         setIsPaid(true)
         setIsProcessing(false)
-        return // <- exit early to avoid wagmi fallback
+        return
       }
 
       // ----------------------------
@@ -117,5 +120,6 @@ export function usePayToCompete() {
     isProcessing,
     handlePayment,
     error,
+    needsReload, // <- if true, UI can show "Reload Warpcast to pay"
   }
 }
