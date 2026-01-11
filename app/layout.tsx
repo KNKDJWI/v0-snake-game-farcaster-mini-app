@@ -4,7 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Providers } from "@/lib/providers"
 import "./globals.css"
-import ClientApp from "./clientApp"
+import ClientApp from "./ClientApp"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: "Snake Mini App",
   description: "Classic Snake game with competition mode on Base",
   generator: "v0.app",
-  other: {"base_app_id": "69634d0f8a6eeb04b568de1a",
+  other: {"base:app_id": "69634d0f8a6eeb04b568de1a",
     "fc:frame": "vNext",
     "fc:frame:image": "https://gemini.google.com/share/59dcc48f49a6",
     "fc:frame:button:1": "Play Snake",
