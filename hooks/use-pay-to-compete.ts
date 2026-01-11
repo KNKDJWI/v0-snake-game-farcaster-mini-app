@@ -15,11 +15,6 @@ const PAYMENT_AMOUNT = "0.00001"
 const RECIPIENT_ADDRESS =
   "0x25265b9dBEb6c653b0CA281110Bb0697a9685107"
 
-// 🔒 environment detection happens ONCE
-const IS_FARCASTER =
-  typeof window !== "undefined" &&
-  window.location.ancestorOrigins?.[0]?.includes("warpcast")
-
 export function usePayToCompete() {
   const { isConnected } = useAccount()
   const { connectors, connectAsync } = useConnect()
@@ -34,12 +29,6 @@ export function usePayToCompete() {
     pollingInterval: 1000,
   })
 
-  // ✅ payment state always resets on refresh
-  useEffect(() => {
-    setIsPaid(false)
-    setError(null)
-  }, [])
-
   useEffect(() => {
     if (isSuccess) setIsPaid(true)
   }, [isSuccess])
@@ -50,10 +39,15 @@ export function usePayToCompete() {
     setIsProcessing(true)
     setError(null)
 
+    // 🔍 Detect Farcaster at runtime (reliable)
+    const isFarcaster =
+      typeof window !== "undefined" &&
+      (window as any).farcaster !== undefined
+
     // ================================
-    // FARCASTER — ISOLATED PATH
+    // FARCASTER PATH (NO WAGMI)
     // ================================
-    if (IS_FARCASTER) {
+    if (isFarcaster) {
       try {
         const provider =
           (await sdk.wallet.getEthereumProvider()) as
@@ -61,9 +55,7 @@ export function usePayToCompete() {
             | undefined
 
         if (!provider) {
-          setError(
-            "Session expired. Close the frame and reopen it to pay again."
-          )
+          setError("Please close and reopen the frame to continue.")
           return
         }
 
@@ -81,7 +73,7 @@ export function usePayToCompete() {
 
         setIsPaid(true)
         return
-      } catch (err: any) {
+      } catch (err) {
         console.error("[Farcaster Payment Error]", err)
         setError("Payment failed")
         return
@@ -91,7 +83,7 @@ export function usePayToCompete() {
     }
 
     // ================================
-    // BROWSER — ISOLATED PATH
+    // BROWSER PATH (WAGMI)
     // ================================
     try {
       if (!isConnected) {
