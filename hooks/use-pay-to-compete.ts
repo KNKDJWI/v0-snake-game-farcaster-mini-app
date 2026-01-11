@@ -15,6 +15,24 @@ const PAYMENT_AMOUNT = "0.00001"
 const RECIPIENT_ADDRESS =
   "0x25265b9dBEb6c653b0CA281110Bb0697a9685107"
 
+// -------------------------------------
+// ✅ Reliable Farcaster detection
+// -------------------------------------
+let _isFarcaster: boolean | null = null
+
+async function detectFarcaster(): Promise<boolean> {
+  if (_isFarcaster !== null) return _isFarcaster
+
+  try {
+    await sdk.context
+    _isFarcaster = true
+  } catch {
+    _isFarcaster = false
+  }
+
+  return _isFarcaster
+}
+
 export function usePayToCompete() {
   const { isConnected } = useAccount()
   const { connectors, connectAsync } = useConnect()
@@ -39,10 +57,7 @@ export function usePayToCompete() {
     setIsProcessing(true)
     setError(null)
 
-    // 🔍 Detect Farcaster at runtime (reliable)
-    const isFarcaster =
-      typeof window !== "undefined" &&
-      (window as any).farcaster !== undefined
+    const isFarcaster = await detectFarcaster()
 
     // ================================
     // FARCASTER PATH (NO WAGMI)
@@ -55,7 +70,9 @@ export function usePayToCompete() {
             | undefined
 
         if (!provider) {
-          setError("Please close and reopen the frame to continue.")
+          setError(
+            "Session expired. Close the frame and reopen it to continue."
+          )
           return
         }
 
