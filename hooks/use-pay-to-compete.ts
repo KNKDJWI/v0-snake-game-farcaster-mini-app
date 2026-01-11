@@ -22,14 +22,12 @@ let _isFarcaster: boolean | null = null
 
 async function detectFarcaster(): Promise<boolean> {
   if (_isFarcaster !== null) return _isFarcaster
-
   try {
     await sdk.context
     _isFarcaster = true
   } catch {
     _isFarcaster = false
   }
-
   return _isFarcaster
 }
 
@@ -70,21 +68,34 @@ export function usePayToCompete() {
             | undefined
 
         if (!provider) {
-          setError(
-            "Session expired. Close the frame and reopen it to continue."
-          )
+          setError("Session expired. Close and reopen the frame.")
           return
         }
 
-        await provider.request({ method: "eth_requestAccounts" })
+        // 1️⃣ Get account
+        const accounts = (await provider.request({
+          method: "eth_requestAccounts",
+        })) as string[]
 
+        const from = accounts?.[0]
+        if (!from) throw new Error("No wallet account found")
+
+        // 2️⃣ Ensure Base network
+        await provider.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0x2105" }], // Base Mainnet
+        })
+
+        // 3️⃣ Send transaction (TS-safe)
         await provider.request({
           method: "eth_sendTransaction",
           params: [
             {
+              from,
               to: RECIPIENT_ADDRESS,
               value: `0x${parseEther(PAYMENT_AMOUNT).toString(16)}`,
-            },
+              chainId: "0x2105",
+            } as any, // ✅ TypeScript fix (runtime-safe)
           ],
         })
 
@@ -92,7 +103,7 @@ export function usePayToCompete() {
         return
       } catch (err) {
         console.error("[Farcaster Payment Error]", err)
-        setError("Payment failed")
+        setError("Payment failed or was rejected")
         return
       } finally {
         setIsProcessing(false)
